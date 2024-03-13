@@ -14,13 +14,11 @@ import (
 	v4 "distributed_log/internal/protobuf/v4"
 	"github.com/hashicorp/raft"
 	"github.com/stretchr/testify/require"
-	"github.com/travisjeffery/go-dynaport"
 )
 
 func TestMultipleNodes(t *testing.T) {
 	var logs []*dsLog.DistributedLog
 	nodeCount := 3
-	ports := dynaport.Get(nodeCount)
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -30,8 +28,9 @@ func TestMultipleNodes(t *testing.T) {
 		//defer func(dir string) {
 		//	_ = os.RemoveAll(dir)
 		//}(dataDir)
-
-		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", ports[i]))
+		port, err := GetFreePort()
+		require.NoError(t, err)
+		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 		require.NoError(t, err)
 
 		config := dsLog.Config{}
@@ -98,4 +97,16 @@ func TestMultipleNodes(t *testing.T) {
 		}, 500*time.Millisecond, 50*time.Millisecond)
 	}
 
+}
+
+func GetFreePort() (port int, err error) {
+	var a *net.TCPAddr
+	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
+		}
+	}
+	return
 }

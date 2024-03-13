@@ -9,7 +9,6 @@ require (
 	github.com/hashicorp/raft-boltdb v0.0.0-20231211162105-6c830fa4535e
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
-	github.com/travisjeffery/go-dynaport v1.0.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7
 	google.golang.org/grpc v1.62.1
 )
