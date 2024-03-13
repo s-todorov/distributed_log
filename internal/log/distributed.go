@@ -148,7 +148,6 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 		fmt.Println(err)
 	}
 	_ = configFuture.Configuration().Servers
-	//fmt.Println(servers)
 	return err
 }
 
