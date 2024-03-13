@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "api/v1/protobuf/index.proto";
+
+service IndexService {
+  rpc IndexDocument (Index) returns (Response) {}
+}
+
+message Index {
+  string File = 1;
+  string App = 2;
+  string State = 3;
+  string Msg = 4;
+  int64 ImportTime = 5; // time.Time is represented as int64 in protobuf
+  int64 Size = 6;
+}
+
+message Response {
+  int64 StatusCode = 1;
+  string Msg = 2;
+}
