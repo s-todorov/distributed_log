@@ -20,3 +20,7 @@ func NewIndex(file string, app string, state string, msg string, size int64) Ind
 
 	return Index{File: file, App: app, State: state, Msg: msg, ImportTime: time.Now(), Size: size}
 }
+
+type Response struct {
+	Msg string
+}

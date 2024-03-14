@@ -185,6 +185,7 @@ func (s *IndexStore) Append(index Index) (offset int64, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	defer func(s *IndexStore) {
+		// todo flush to disk after time or size
 		err := s.Sync()
 		if err != nil {
 

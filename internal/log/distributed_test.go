@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	v4 "distributed_log/internal/common/api/protobuf/v4"
 	dsLog "distributed_log/internal/log"
 	"fmt"
 	"io/ioutil"
@@ -8,10 +9,10 @@ import (
 	"log/slog"
 	"net"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
-	v4 "distributed_log/internal/protobuf/v4"
 	"github.com/hashicorp/raft"
 	"github.com/stretchr/testify/require"
 )
@@ -46,7 +47,7 @@ func TestMultipleNodes(t *testing.T) {
 			config.Raft.Bootstrap = true
 		}
 
-		l, err := dsLog.NewDistributedLog(dataDir, i, config, &logs)
+		l, err := dsLog.NewDistributedLog(dataDir, strconv.Itoa(i), config)
 		require.NoError(t, err)
 
 		if i != 0 {
@@ -96,7 +97,6 @@ func TestMultipleNodes(t *testing.T) {
 			return true
 		}, 500*time.Millisecond, 50*time.Millisecond)
 	}
-
 }
 
 func GetFreePort() (port int, err error) {

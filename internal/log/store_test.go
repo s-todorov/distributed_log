@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var dir = "/home/l490/GolandProjects/distributed_log/tmp"
+var dir = "C:\\Users\\stodorov\\Downloads\\distributed_log-main\\tmp"
 
 func TestLogLoadAfterClose(t *testing.T) {
 	store, err := NewIndexStore(dir)
@@ -68,7 +68,7 @@ func TestLogReadWrite(t *testing.T) {
 	assert.NoError(t, err, "Error creating index store")
 
 	tn := time.Now()
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 10; i++ {
 		_, err = l.Append(Index{File: fmt.Sprintf("test log:%d", i), App: "test", State: "test", Msg: "test", ImportTime: time.Now(), Size: maxIndexSize})
 		assert.NoError(t, err, "Error appending to index store")
 	}

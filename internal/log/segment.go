@@ -3,6 +3,7 @@ package log
 import (
 	"bufio"
 	"bytes"
+	v4 "distributed_log/internal/common/api/protobuf/v4"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"path"
 	"time"
 
-	v4 "distributed_log/internal/protobuf/v4"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -128,7 +128,7 @@ func (s *segment) encProto(index Index) ([]byte, error) {
 	idnex := &v4.Record{Offset: index.Offset, Value: []byte(index.File)}
 	marshal, err := proto.Marshal(idnex)
 	if err != nil {
-		fmt.Print(err)
+		return nil, err
 	}
 	return marshal, nil
 }

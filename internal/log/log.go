@@ -3,7 +3,7 @@ package log
 import (
 	"bufio"
 	"bytes"
-	v4 "distributed_log/internal/protobuf/v4"
+	v4 "distributed_log/internal/common/api/protobuf/v4"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"

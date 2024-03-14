@@ -3,7 +3,8 @@ package log
 import (
 	"bytes"
 	"crypto/tls"
-	"distributed_log/internal/protobuf"
+	"distributed_log/internal/common/api/protobuf"
+	v4 "distributed_log/internal/common/api/protobuf/v4"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"io"
@@ -16,27 +17,22 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 
 	"github.com/hashicorp/raft"
-
-	v4 "distributed_log/internal/protobuf/v4"
 )
 
 type DistributedLog struct {
 	config Config
 	log    *Log
 	raft   *raft.Raft
-	LogID  int
-	// TODO del after DEBUG
-	logs *[]*DistributedLog
+	LogID  string
 }
 
-func NewDistributedLog(dataDir string, logId int, config Config, logs *[]*DistributedLog) (
+func NewDistributedLog(dataDir string, logId string, config Config) (
 	*DistributedLog,
 	error,
 ) {
 	l := &DistributedLog{
 		config: config,
 		LogID:  logId,
-		logs:   logs,
 	}
 	if err := l.setupLog(dataDir); err != nil {
 		return nil, err
@@ -66,7 +62,7 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 	}
 	logConfig := l.config
 	logConfig.Segment.InitialOffset = 1
-	logStore, err := newLogStore(logDir, logConfig, l.LogID, l.logs)
+	logStore, err := newLogStore(logDir, logConfig, l.LogID)
 	if err != nil {
 		return err
 	}
@@ -152,7 +148,7 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 }
 
 func (l *DistributedLog) Append(record *v4.Record) (uint64, error) {
-	slog.Info(fmt.Sprintf("(l *DistributedLog) Append(record *api.Record) %d", l.LogID))
+	slog.Info(fmt.Sprintf("(l *DistributedLog) Append(record *api.Record) %s", l.LogID))
 	res, err := l.apply(
 		AppendRequestType,
 		&v4.ProduceRequest{Record: record},
@@ -193,7 +189,7 @@ func (l *DistributedLog) apply(reqType RequestType, req proto.Message) (
 }
 
 func (l *DistributedLog) Read(offset uint64) (*v4.Record, error) {
-	slog.Info(fmt.Sprintf("(l *DistributedLog) Read(offset uint64) (*api.Record, error) logID:%d off:%d", l.LogID, offset))
+	slog.Info(fmt.Sprintf("(l *DistributedLog) Read(offset uint64) (*api.Record, error) logID:%s off:%d", l.LogID, offset))
 	idx, err := l.log.ReadAt(int64(offset))
 	if err != nil {
 		return nil, err
@@ -273,6 +269,10 @@ func (l *DistributedLog) GetServers() ([]*v4.Server, error) {
 	return servers, nil
 }
 
+func (l *DistributedLog) GetLeader() (raft.ServerAddress, raft.ServerID) {
+	return l.raft.LeaderWithID()
+}
+
 func (l *DistributedLog) IsLeader() bool {
 	return l.raft.Leader() != ""
 }
@@ -281,7 +281,7 @@ var _ raft.FSM = (*fsm)(nil)
 
 type fsm struct {
 	log   *Log
-	logID int
+	logID string
 }
 
 type RequestType uint8
@@ -291,7 +291,7 @@ const (
 )
 
 func (l *fsm) Apply(record *raft.Log) interface{} {
-	slog.Info(fmt.Sprintf("(l *fsm) Apply(record *raft.Log) interface{} %d", l.logID))
+	slog.Info(fmt.Sprintf("(l *fsm) Apply(record *raft.Log) interface{} %s", l.logID))
 	buf := record.Data
 	reqType := RequestType(buf[0])
 	switch reqType {
@@ -371,26 +371,25 @@ var _ raft.LogStore = (*logStore)(nil)
 
 type logStore struct {
 	*Log
-	logID int
-	logs  *[]*DistributedLog
+	logID string
 }
 
-func newLogStore(dir string, c Config, logId int, logs *[]*DistributedLog) (*logStore, error) {
+func newLogStore(dir string, c Config, logId string) (*logStore, error) {
 	log, err := NewLog(dir)
 	if err != nil {
 		return nil, err
 	}
-	return &logStore{log, logId, logs}, nil
+	return &logStore{log, logId}, nil
 }
 
 func (l *logStore) FirstIndex() (uint64, error) {
-	slog.Info(fmt.Sprintf("(l *logStore) FirstIndex() (uint64, error) %d", l.logID))
+	slog.Info(fmt.Sprintf("(l *logStore) FirstIndex() (uint64, error) %s", l.logID))
 	return l.LowestOffset()
 }
 
 func (l *logStore) LastIndex() (uint64, error) {
 	off, err := l.HighestOffset()
-	slog.Info(fmt.Sprintf("(l *logStore) LastIndex() (uint64, error) logID:%d off:%d", l.logID, off))
+	slog.Info(fmt.Sprintf("(l *logStore) LastIndex() (uint64, error) logID:%s off:%d", l.logID, off))
 	return off, err
 }
 
@@ -410,13 +409,13 @@ func (l *logStore) GetLog(index uint64, out *raft.Log) error {
 	//}
 
 	if int(index) > len(l.indexes) {
-		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%d index:%d", l.logID, index))
+		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%s index:%d", l.logID, index))
 		// return err is ok for raft(only warm)
 		return protobuf.ErrOffsetOutOfRange{Offset: index}
 	}
 
 	if len(l.indexes) == 0 {
-		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%d index:%d", l.logID, index))
+		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%s index:%d", l.logID, index))
 		// return err is ok for raft(only warm)
 		return protobuf.ErrOffsetOutOfRange{Offset: index}
 	}
@@ -424,7 +423,7 @@ func (l *logStore) GetLog(index uint64, out *raft.Log) error {
 	off := uint64(l.indexes[index-1].Offset)
 	in, err := l.ReadAt(int64(off))
 	if err != nil {
-		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%d index:%d", l.logID, index))
+		slog.Info(fmt.Sprintf("OUT OF RANGE(l *logStore) GetLog(index uint64, out *raft.Log) error logID:%s index:%d", l.logID, index))
 		return err
 	}
 	// DEBUG
@@ -443,7 +442,7 @@ func (l *logStore) StoreLog(record *raft.Log) error {
 }
 func (l *logStore) StoreLogs(records []*raft.Log) error {
 
-	slog.Info(fmt.Sprintf("(l *logStore) StoreLogs(records []*raft.Log) error logID: %d", l.logID))
+	slog.Info(fmt.Sprintf("(l *logStore) StoreLogs(records []*raft.Log) error logID: %s", l.logID))
 	for _, record := range records {
 		if _, err := l.Append(&v4.Record{
 			Value: record.Data,
@@ -576,7 +575,7 @@ func (l *DistributedLog) setupRaftOLD(dataDir string) error {
 
 	logConfig := l.config
 	logConfig.Segment.InitialOffset = 1
-	lstore, err := newLogStore(dataDir, logConfig, l.LogID, l.logs)
+	lstore, err := newLogStore(dataDir, logConfig, l.LogID)
 	if err != nil {
 		slog.Info(err.Error())
 	}
