@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -11,9 +10,20 @@ func TestSegment(t *testing.T) {
 	dir := os.TempDir()
 
 	s, err := newSegment(dir)
-	assert.NoError(t, err, "Error creating index store")
+	assert.NoError(t, err, "Error creating")
 
-	off, err := s.write([]byte("Hallo"))
-	assert.NoError(t, err, "Error creating index store")
-	fmt.Println(off)
+	data := []byte("Hallo")
+	_, err = s.write(data)
+	assert.NoError(t, err, "Error writing")
+
+	err = s.bufWriter.Flush()
+	assert.NoError(t, err, "Error flush")
+
+	err = s.file.Sync()
+	assert.NoError(t, err, "Error sync")
+
+	last, err := s.popLast()
+	assert.NoError(t, err, "Error popLast")
+
+	assert.Equal(t, data, last)
 }
