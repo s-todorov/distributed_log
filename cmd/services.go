@@ -99,7 +99,7 @@ func WithDsLog(conf log.Config, dataDir string, id string) ServicesConfiguration
 			slog.Error(err.Error(), err)
 		} else {
 			err = os.Logs[0].Join(
-				fmt.Sprintf("%d", id), conf.Raft.BindAddr,
+				fmt.Sprintf("%s", id), conf.Raft.BindAddr,
 			)
 		}
 

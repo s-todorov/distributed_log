@@ -32,6 +32,9 @@ func newSegment(dir string) (*segment, error) {
 		os.O_RDWR|os.O_CREATE|os.O_APPEND,
 		0644,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	idx := &segment{
 		file:      file,

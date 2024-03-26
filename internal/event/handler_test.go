@@ -1,7 +1,7 @@
 package event
 
 import (
-	"distributed_log/internal/log"
+	v4 "distributed_log/internal/common/api/protobuf/v4"
 	"fmt"
 	"testing"
 	"time"
@@ -66,7 +66,7 @@ func (m *mockIndexService) New() chan<- *Event {
 	panic("implement me")
 }
 
-func (m *mockIndexService) NewEvent(event *Event) (*log.Index, error) {
+func (m *mockIndexService) NewEvent(event *Event) (*v4.Record, error) {
 	m.id++
 	fmt.Println("hallo ", m.id)
 	return nil, nil

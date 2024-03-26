@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var dir = "C:\\Users\\stodorov\\Downloads\\distributed_log-main\\tmp"
-
 func TestLogLoadAfterClose(t *testing.T) {
+	dir := os.TempDir()
+
 	store, err := NewIndexStore(dir)
 	assert.NoError(t, err, "Error creating index store")
 
@@ -32,6 +32,8 @@ func TestLogLoadAfterClose(t *testing.T) {
 }
 
 func TestLogLoadAndWriteAfterClose(t *testing.T) {
+	dir := os.TempDir()
+
 	store, err := NewIndexStore(dir)
 	assert.NoError(t, err, "Error creating index store")
 
@@ -64,6 +66,7 @@ func TestLogLoadAndWriteAfterClose(t *testing.T) {
 }
 
 func TestLogReadWrite(t *testing.T) {
+	dir := os.TempDir()
 	l, err := NewIndexStore(dir)
 	assert.NoError(t, err, "Error creating index store")
 
@@ -88,6 +91,8 @@ func TestLogReadWrite(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
+	dir := os.TempDir()
+
 	storeFile, _ := os.OpenFile(
 		path.Join(dir, fmt.Sprintf("%d%s", 0, ".json")),
 		os.O_RDWR|os.O_CREATE|os.O_APPEND,

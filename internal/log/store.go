@@ -47,17 +47,6 @@ func (s *IndexStore) Reader() io.Reader {
 	return s.segment.file
 }
 
-type originReader struct {
-	*storeInMemory
-	off int64
-}
-
-//func (o *originReader) Read(p []byte) (int, error) {
-//	n, err := o.ReadAt(p, o.off)
-//	o.off += int64(n)
-//	return n, err
-//}
-
 func (s *IndexStore) FirstIndex() (uint64, error) {
 	return 0, nil
 }

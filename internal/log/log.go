@@ -47,19 +47,6 @@ func (s *Log) Reader() io.Reader {
 	return s.segment.file
 }
 
-//type originLogReader struct {
-//	*log
-//	off int64
-//}
-//
-//func (o *originLogReader) Read(p []byte) (int, error) {
-//	n, err := o.Read(o.off)
-//	return p, err
-//
-//	//o.off += int64(n)
-//	return n, err
-//}
-
 // storeInMemory represents information about the stored indexes in memory.
 type LogInMemory struct {
 	Offset int64
@@ -77,14 +64,14 @@ func NewLog(dir string) (*Log, error) {
 		0644,
 	)
 
-	log, err := newSegment(dir)
+	s, err := newSegment(dir)
 	if err != nil {
 		return nil, err
 	}
 
 	store := Log{
 		file:      file,
-		segment:   log,
+		segment:   s,
 		indexes:   make([]*storeInMemory, 0),
 		bufWriter: bufio.NewWriter(file),
 		Dir:       dir,
@@ -126,30 +113,6 @@ func (s *Log) setup() error {
 
 	return nil
 }
-
-//// readAt reads data from a specified offset in the file.
-//func readAt(f *os.File, pos int64) ([]byte, int64, error) {
-//	offset := pos - offWidth
-//	if offset <= -1 {
-//		return nil, 0, io.EOF
-//	}
-//
-//	segmentSize := make([]byte, offWidth)
-//	_, err := f.ReadAt(segmentSize, offset)
-//	if err != nil {
-//		return nil, 0, err
-//	}
-//
-//	byteToRead := binary.LittleEndian.Uint32(segmentSize)
-//	dataSize := pos - int64(byteToRead) - offWidth
-//
-//	size := make([]byte, byteToRead)
-//	_, err = f.ReadAt(size, dataSize)
-//	if err != nil {
-//		return nil, 0, err
-//	}
-//	return size, dataSize, nil
-//}
 
 // Append adds a new index to the store.
 func (s *Log) Append(index *v4.Record) (offset int64, err error) {
@@ -233,23 +196,8 @@ func (l *Log) HighestOffset() (uint64, error) {
 		return 0, nil
 	}
 
-	//off := l.indexes[len(l.indexes)-1].Offset
-	//if off == 0 {
-	//	return 0, nil
-	//}
-	//return uint64(off - 1), nil
 	return uint64(len(l.indexes) - 1), nil
 }
-
-// TODO check and remove dead code
-// PopLast removes and retrieves the last index from the store.
-//func (s *Log) PopLast() (index *indx.Index, err error) {
-//	i, err := s.segment.popLast()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return s.segment.dec(i)
-//}
 
 // Close closes the IndexStore and flushes/syncs the segments and store.
 func (s *Log) Close() error {

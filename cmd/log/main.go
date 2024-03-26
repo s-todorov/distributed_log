@@ -62,10 +62,7 @@ func New() *cmd.Services {
 	nodeCount := 3
 
 	for i := 0; i < nodeCount; i++ {
-		//dataDir, err := ioutil.TempDir("", "distributed-log-test")
-		//defer func(dir string) {
-		//	_ = os.RemoveAll(dir)
-		//}(dataDir)
+
 		port, err := GetFreePort()
 		nodeId := fmt.Sprintf("%d", i)
 		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
